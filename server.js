@@ -25,6 +25,8 @@ const whitelist = [
   'https://kilonzocorp.com/',
   'http://localhost:3000',
   'https://localhost:3000',
+  'https://localhost:3001',
+  'http://localhost:3001',
   'hhttps://kilonzocorp.vercel.app/'
 ];
 
