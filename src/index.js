@@ -5,36 +5,69 @@ import stkRoutes from "./routes/stkRoutes.js";
 import cors from "cors";
 
 dotenv.config({ path: "./src/.env" });
-const whitelist = ["https://kilonzocorp.vercel.app/"];
+
+// Configure allowed origins
+const whitelist = [
+  "http://kilonzocorp.com",
+  "https://kilonzocorp.com",
+  "http://localhost:3000",
+  "https://localhost:3000",
+  "http://localhost:5000",
+  "https://localhost:5000",
+  /\.vercel\.app$/,
+  "https://kilonzocorp.vercel.app",
+  "http://kilonzocorp.vercel.app"
+];
+
 const corsOptions = {
   origin: function (origin, callback) {
-    if (whitelist.indexOf(origin) !== -1 || !origin) {
+    if (!origin) return callback(null, true);
+    
+    if (
+      whitelist.some(allowedOrigin => {
+        if (typeof allowedOrigin === 'string') {
+          return origin === allowedOrigin || 
+                origin.startsWith(allowedOrigin);
+        } else if (allowedOrigin instanceof RegExp) {
+          return allowedOrigin.test(origin);
+        }
+        return false;
+      })
+    ) {
       callback(null, true);
     } else {
-      callback(new Error("Not allowed by CORS"));
+      callback(new Error(`Origin '${origin}' not allowed by CORS`));
     }
   },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
 };
 
 const app = express();
-const PORT = process.env.PORT;
-app.use(cors());
+const PORT = process.env.PORT || 5000;
+
+app.use(cors(corsOptions));
 
 // Middleware
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Use the routes
-app.use("/api", stkRoutes); // Prefix routes with '/api' if desired
+// Routes
+app.use("/api", stkRoutes);
 
-// Simple route to check if server is up
+// Health check
 app.get("/", (req, res) => {
-  res.status(200).json({ message: "Server is up and running!" });
+  res.status(200).json({ 
+    message: "Server is up and running!",
+    allowedOrigins: whitelist
+  });
 });
 
-// Start the server
+// Start server
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
+  console.log("Allowed origins:", whitelist);
 });
 
 export { app, PORT };
